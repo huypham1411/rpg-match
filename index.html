@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match-3 RPG Engine Core Playground Ver 3.0</title>
+  <link rel="stylesheet" href="src/web/style.css">
+</head>
+<body>
+  <header>
+    <h1>🎮 Match-3 RPG Engine Core (Ver 3.0 Engine Agnostic)</h1>
+    <p>Boss Stagger & Break Bar System + GBF Charge Bar + 5-Slot Set Bonuses + Parry Counter</p>
+  </header>
+
+  <div class="game-container">
+    <div class="grid-section">
+      <!-- Boss Banner with Stagger & Break Bar -->
+      <div class="boss-banner" style="width: 100%;">
+        <div class="boss-header">
+          <div class="boss-name">
+            👿 Demon Lord Overlord
+            <span id="bossBrokenBadge" class="boss-broken-badge" style="display: none;">⚡ BROKEN (+75% DMG)</span>
+            <span id="autoParryBadge" class="auto-parry-badge" style="display: none;">🛡️ AUTO-PARRY READY</span>
+          </div>
+          <div style="font-size: 0.85rem; color: #f87171;">Class: World Boss</div>
+        </div>
+        <!-- Boss HP Bar -->
+        <div class="bar-container">
+          <div class="bar-fill hp-fill" id="bossHpFill" style="width: 100%;"></div>
+          <div class="bar-text" id="bossHpText">25000 / 25000 (100%)</div>
+        </div>
+        <!-- Boss Stagger / Break Bar -->
+        <div class="bar-container" style="height: 16px;">
+          <div class="bar-fill stagger-fill" id="bossStaggerFill" style="width: 100%;"></div>
+          <div class="bar-text" id="bossStaggerText" style="font-size: 0.7rem;">Stagger Bar: 100 / 100</div>
+        </div>
+        <!-- Boss Charge Bar -->
+        <div class="bar-container" style="height: 12px;">
+          <div class="bar-fill charge-fill" id="bossChargeFill" style="width: 0%;"></div>
+          <div class="bar-text" id="bossChargeText" style="font-size: 0.65rem;">Attack Charge: 0%</div>
+        </div>
+      </div>
+
+      <div class="board-header">
+        <div>
+          <span>Turn: <strong id="turnText">1</strong></span>
+        </div>
+        <div class="moves-badge">
+          Moves Remaining: <span id="movesText">3</span> / 3
+        </div>
+      </div>
+
+      <div class="grid-board" id="gridBoard"></div>
+
+      <div class="parry-box" id="parryBox">
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; color: var(--accent-gold);">
+          <span>⚔️ PARRY TIMING WINDOW</span>
+          <span>Golden Zone (20% - 75%)</span>
+        </div>
+        <div class="parry-timer-bar">
+          <div class="parry-window-zone"></div>
+          <div class="parry-pointer" id="parryPointer"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        <span>🛡️ Party Composition (4 Slots)</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">5 Equip Slots + Set Bonuses</span>
+      </div>
+      <div class="party-list" id="partyList"></div>
+    </div>
+
+    <div class="panel" style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div class="panel-title">
+        <span>⚙️ Combat Controls</span>
+      </div>
+
+      <button class="btn-action btn-block" id="btnBlock">
+        🛡️ ACTIVATE BLOCK MODE
+      </button>
+
+      <button class="btn-action btn-secondary" id="btnExport">
+        💾 Export JSON State Snapshot
+      </button>
+
+      <div class="panel-title" style="margin-top: 0.5rem;">
+        <span>📜 Combat Log</span>
+      </div>
+      <div class="combat-log" id="combatLog">
+        <div class="log-entry">Engine Ver 3.0 Loaded. Boss Stagger Bar & Break System active!</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/web/app.js"></script>
+</body>
+</html>
