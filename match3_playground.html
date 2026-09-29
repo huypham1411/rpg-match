@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match-3 Core Algorithm Playground & Step-by-Step Tester</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --gold: #f59e0b;
+      --text: #f8fafc;
+      --border: #334155;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { color: var(--gold); margin-bottom: 5px; }
+    p { color: #94a3b8; font-size: 0.95rem; margin-top: 0; text-align: center; }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      background: var(--panel);
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    button {
+      background: #334155;
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #475569; }
+    button.active { background: var(--gold); color: #000; }
+
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .board-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+      background: #090d16;
+      padding: 12px;
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      width: 440px;
+      height: 440px;
+    }
+
+    .tile {
+      background: #1e293b;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.15), 0 3px 6px rgba(0,0,0,0.4);
+    }
+    .tile:hover { transform: scale(1.06); }
+    .tile.selected {
+      outline: 3px solid var(--gold);
+      transform: scale(1.1);
+      z-index: 5;
+    }
+    .tile.matching {
+      animation: pulse-match 0.4s infinite alternate;
+    }
+    @keyframes pulse-match {
+      from { transform: scale(1); filter: brightness(1); }
+      to { transform: scale(1.15); filter: brightness(1.6); }
+    }
+
+    .tile-red { background: linear-gradient(135deg, #ef4444, #991b1b); }
+    .tile-blue { background: linear-gradient(135deg, #3b82f6, #1e40af); }
+    .tile-green { background: linear-gradient(135deg, #10b981, #065f46); }
+    .tile-yellow { background: linear-gradient(135deg, #f59e0b, #b45309); }
+    .tile-purple { background: linear-gradient(135deg, #8b5cf6, #5b21b6); }
+
+    .info-panel {
+      width: 400px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--gold);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 5px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .log-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      height: 240px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .log-line { border-bottom: 1px dotted #334155; padding-bottom: 2px; }
+    .log-highlight { color: #fde047; font-weight: bold; }
+    .log-combo { color: #f472b6; font-weight: bold; }
+
+    .step-explain {
+      background: #1e1b4b;
+      border: 1px solid #6366f1;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #c7d2fe;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 Match-3 Core Algorithm Playground</h1>
+  <p>Thử nghiệm và quan sát thuật toán xếp hình Match-3 chạy từng bước trực tiếp trên trình duyệt</p>
+
+  <div class="controls">
+    <span style="align-self: center; font-weight: bold; color: var(--gold);">Số màu Palette:</span>
+    <button id="btn3Color" class="active">3 Màu (Dễ ghép / High Cascade)</button>
+    <button id="btn4Color">4 Màu</button>
+    <button id="btn5Color">5 Màu (Chuẩn Match-3 RPG)</button>
+    <button id="btnResetGrid" style="margin-left: 15px; background: #dc2626;">🔄 Xáo lại bàn (Init Grid)</button>
+  </div>
+
+  <div class="main-layout">
+    <div class="board-container">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="info-panel">
+      <div class="section-title">📊 Trạng Thái Trận Đấu & Combo</div>
+      <div class="stat-row">
+        <span>Lượt di chuyển còn lại:</span>
+        <strong id="movesCount" style="color: var(--gold);">3 / 3</strong>
+      </div>
+      <div class="stat-row">
+        <span>Tổng số Combo vừa tạo:</span>
+        <strong id="comboCount" style="color: #f472b6;">0x Combo</strong>
+      </div>
+      <div class="stat-row">
+        <span>Tổng sát thương / Nộ tích được:</span>
+        <strong id="totalDamage">0 DMG</strong>
+      </div>
+
+      <div class="step-explain" id="stepExplain">
+        💡 <strong>Hướng dẫn:</strong> Bấm vào 1 viên candy, sau đó bấm viên kề bên để Hoán Đổi (Swap). Thuật toán sẽ quét Match 3/4/5 và Khối 2x2.
+      </div>
+
+      <div class="section-title">📜 Nhật Ký Thuật Toán (Algorithm Log)</div>
+      <div class="log-box" id="logBox">
+        <div class="log-line">Hệ thống khởi tạo thành công.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ----------------------------------------------------
+    // PURE MATCH-3 ENGINE LOGIC (Stand-alone Single File)
+    // ----------------------------------------------------
+    const ROWS = 8;
+    const COLS = 8;
+    let availableColors = ['red', 'blue', 'green'];
+    let grid = [];
+    let selectedTile = null;
+    let movesLeft = 3;
+    let totalDmg = 0;
+
+    const COLOR_ICONS = {
+      red: '⚔️',
+      blue: '🛡️',
+      green: '🌿',
+      yellow: '⚡',
+      purple: '🗡️'
+    };
+
+    // 1. Khởi tạo Bàn Chơi (Tránh tạo sẵn 3 viên giống nhau liền hàng)
+    function initGrid() {
+      grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          let validColors = [...availableColors];
+
+          // Lọc không cho trùng 3 viên ngang
+          if (c >= 2 && grid[r][c - 1] && grid[r][c - 2]) {
+            if (grid[r][c - 1].color === grid[r][c - 2].color) {
+              validColors = validColors.filter(clr => clr !== grid[r][c - 1].color);
+            }
+          }
+
+          // Lọc không cho trùng 3 viên dọc
+          if (r >= 2 && grid[r - 1][c] && grid[r - 2][c]) {
+            if (grid[r - 1][c].color === grid[r - 2][c].color) {
+              validColors = validColors.filter(clr => clr !== grid[r - 1][c].color);
+            }
+          }
+
+          const chosenColor = validColors[Math.floor(Math.random() * validColors.length)] || availableColors[0];
+          grid[r][c] = { row: r, col: c, color: chosenColor };
+        }
+      }
+
+      selectedTile = null;
+      log(`Bàn chơi $8 \\times 8$ được khởi tạo với ${availableColors.length} màu.`, 'log-highlight');
+      renderBoard();
+    }
+
+    // 2. Thuật Toán Tìm Tất Cả Đòn Match (Ngang, Dọc, Khối 2x2)
+    function findAllMatches() {
+      const matches = [];
+
+      // A. Quét Khối 2x2 Square
+      for (let r = 0; r < ROWS - 1; r++) {
+        for (let c = 0; c < COLS - 1; c++) {
+          const t1 = grid[r][c];
+          const t2 = grid[r][c + 1];
+          const t3 = grid[r + 1][c];
+          const t4 = grid[r + 1][c + 1];
+
+          if (t1 && t2 && t3 && t4 && t1.color === t2.color && t1.color === t3.color && t1.color === t4.color) {
+            matches.push({
+              type: '2x2 Square',
+              color: t1.color,
+              tiles: [{r, c}, {r, c: c+1}, {r: r+1, c}, {r: r+1, c: c+1}]
+            });
+          }
+        }
+      }
+
+      // B. Quét Ngang (Horizontal 3+)
+      for (let r = 0; r < ROWS; r++) {
+        let matchLength = 1;
+        for (let c = 0; c < COLS; c++) {
+          const current = grid[r][c];
+          const next = c < COLS - 1 ? grid[r][c + 1] : null;
+
+          if (current && next && current.color === next.color) {
+            matchLength++;
+          } else {
+            if (matchLength >= 3) {
+              const tiles = [];
+              for (let i = 0; i < matchLength; i++) {
+                tiles.push({ r, c: c - i });
+              }
+              const color = grid[r][c - matchLength + 1].color;
+              matches.push({ type: `Match-${matchLength}`, color, tiles });
+            }
+            matchLength = 1;
+          }
+        }
+      }
+
+      // C. Quét Dọc (Vertical 3+)
+      for (let c = 0; c < COLS; c++) {
+        let matchLength = 1;
+        for (let r = 0; r < ROWS; r++) {
+          const current = grid[r][c];
+          const next = r < ROWS - 1 ? grid[r + 1][c] : null;
+
+          if (current && next && current.color === next.color) {
+            matchLength++;
+          } else {
+            if (matchLength >= 3) {
+              const tiles = [];
+              for (let i = 0; i < matchLength; i++) {
+                tiles.push({ r: r - i, c });
+              }
+              const color = grid[r - matchLength + 1][c].color;
+              matches.push({ type: `Match-${matchLength}`, color, tiles });
+            }
+            matchLength = 1;
+          }
+        }
+      }
+
+      return matches;
+    }
+
+    // 3. Hoán Đổi & Xử Lý Cascade Nhảy Viên
+    async function handleSwap(r1, c1, r2, c2) {
+      if (movesLeft <= 0) {
+        log('❌ Hết lượt di chuyển trong turn!', 'log-highlight');
+        return;
+      }
+
+      // Đáo đổi vị trí trong ma trận
+      executeSwap(r1, c1, r2, c2);
+
+      let matches = findAllMatches();
+      if (matches.length === 0) {
+        // Không tạo được match -> Hoàn tác
+        executeSwap(r1, c1, r2, c2);
+        log(`❌ Hoán đổi (${r1},${c1}) <-> (${r2},${c2}) không tạo match 3. Hoàn tác!`, '');
+        renderBoard();
+        return;
+      }
+
+      movesLeft--;
+      document.getElementById('movesCount').textContent = `${movesLeft} / 3`;
+      log(`🔄 Nối thành công (${r1},${c1}) <-> (${r2},${c2})!`, 'log-highlight');
+
+      // Vòng lặp Cascade
+      let comboCount = 0;
+      let totalTurnDamage = 0;
+
+      while (matches.length > 0) {
+        comboCount++;
+        document.getElementById('comboCount').textContent = `${comboCount}x Combo`;
+
+        // Highlight các viên bị nổ
+        const tilesToClear = new Set();
+        matches.forEach(m => {
+          log(`  ✨ [Combo ${comboCount}x] Phát hiện ${m.type} màu ${m.color.toUpperCase()} (${m.tiles.length} viên)`, 'log-combo');
+          m.tiles.forEach(t => tilesToClear.add(`${t.r}_${t.c}`));
+        });
+
+        // Xóa viên bị nổ
+        tilesToClear.forEach(key => {
+          const [r, c] = key.split('_').map(Number);
+          grid[r][c] = null;
+        });
+
+        totalTurnDamage += tilesToClear.size * 25 * comboCount;
+        totalDmg += tilesToClear.size * 25 * comboCount;
+        document.getElementById('totalDamage').textContent = `${totalDmg} DMG`;
+
+        renderBoard();
+        await sleep(350);
+
+        // Vật Lý Rơi (Gravity Drop)
+        applyGravity();
+        renderBoard();
+        await sleep(250);
+
+        // Sinh Viên Mới Ở Đỉnh (Refill Top)
+        refillTop();
+        renderBoard();
+        await sleep(250);
+
+        // Kiểm tra xem viên mới rơi xuống có tạo thêm Match không (Cascade Loop)
+        matches = findAllMatches();
+      }
+
+      log(`✅ Turn hoàn tất! Tổng combo: ${comboCount}x | Sát thương: +${totalTurnDamage} DMG`, 'log-highlight');
+    }
+
+    function executeSwap(r1, c1, r2, c2) {
+      const temp = grid[r1][c1];
+      grid[r1][c1] = grid[r2][c2];
+      grid[r2][c2] = temp;
+      if (grid[r1][c1]) { grid[r1][c1].row = r1; grid[r1][c1].col = c1; }
+      if (grid[r2][c2]) { grid[r2][c2].row = r2; grid[r2][c2].col = c2; }
+    }
+
+    function applyGravity() {
+      for (let c = 0; c < COLS; c++) {
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (grid[r][c] === null) {
+            for (let rAbove = r - 1; rAbove >= 0; rAbove--) {
+              if (grid[rAbove][c] !== null) {
+                grid[r][c] = grid[rAbove][c];
+                grid[r][c].row = r;
+                grid[rAbove][c] = null;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function refillTop() {
+      for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+          if (grid[r][c] === null) {
+            const color = availableColors[Math.floor(Math.random() * availableColors.length)];
+            grid[r][c] = { row: r, col: c, color };
+          }
+        }
+      }
+    }
+
+    // ----------------------------------------------------
+    // RENDER & UI EVENTS
+    // ----------------------------------------------------
+    function renderBoard() {
+      const gridEl = document.getElementById('grid');
+      gridEl.innerHTML = '';
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const tile = grid[r][c];
+          const div = document.createElement('div');
+          
+          if (tile) {
+            div.className = `tile tile-${tile.color}`;
+            div.textContent = COLOR_ICONS[tile.color] || '💎';
+            if (selectedTile && selectedTile.r === r && selectedTile.c === c) {
+              div.classList.add('selected');
+            }
+          } else {
+            div.className = 'tile';
+            div.style.opacity = '0.2';
+          }
+
+          div.addEventListener('click', () => onTileClick(r, c));
+          gridEl.appendChild(div);
+        }
+      }
+    }
+
+    function onTileClick(r, c) {
+      if (!selectedTile) {
+        selectedTile = { r, c };
+        renderBoard();
+      } else {
+        const r1 = selectedTile.r;
+        const c1 = selectedTile.c;
+        selectedTile = null;
+
+        if (r1 === r && c1 === c) {
+          renderBoard();
+          return;
+        }
+
+        // Check xem 2 ô có kề nhau không (Up, Down, Left, Right)
+        const isAdj = (Math.abs(r1 - r) === 1 && c1 === c) || (Math.abs(c1 - c) === 1 && r1 === r);
+        if (!isAdj) {
+          log('⚠️ Hai ô chọn không kề nhau!', '');
+          renderBoard();
+          return;
+        }
+
+        handleSwap(r1, c1, r, c);
+      }
+    }
+
+    function log(msg, className = '') {
+      const logBox = document.getElementById('logBox');
+      const div = document.createElement('div');
+      div.className = `log-line ${className}`;
+      div.textContent = msg;
+      logBox.appendChild(div);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Switcher Palette Button Handlers
+    document.getElementById('btn3Color').addEventListener('click', (e) => {
+      setActivePalette(e.target, ['red', 'blue', 'green']);
+    });
+    document.getElementById('btn4Color').addEventListener('click', (e) => {
+      setActivePalette(e.target, ['red', 'blue', 'green', 'yellow']);
+    });
+    document.getElementById('btn5Color').addEventListener('click', (e) => {
+      setActivePalette(e.target, ['red', 'blue', 'green', 'yellow', 'purple']);
+    });
+    document.getElementById('btnResetGrid').addEventListener('click', () => {
+      movesLeft = 3;
+      document.getElementById('movesCount').textContent = '3 / 3';
+      initGrid();
+    });
+
+    function setActivePalette(btn, colors) {
+      document.querySelectorAll('.controls button').forEach(b => {
+        if (b.id !== 'btnResetGrid') b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      availableColors = colors;
+      initGrid();
+    }
+
+    // Run First Init
+    initGrid();
+  </script>
+</body>
+</html>
