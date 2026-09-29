@@ -3,18 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Match-3 RPG Engine Core Playground Ver 3.0</title>
+  <title>Pure Match-3 Core Engine Playground</title>
   <link rel="stylesheet" href="src/web/style.css">
 </head>
 <body>
   <header>
-    <h1>🎮 Match-3 RPG Engine Core (Ver 3.0 Engine Agnostic)</h1>
-    <p>Boss Stagger & Break Bar System + GBF Charge Bar + 5-Slot Set Bonuses + Parry Counter</p>
+    <h1>🎮 Pure Match-3 Core Engine Testbed</h1>
+    <p>Dynamic Candy Palette (3 to 5 Colors) + Cascades + Combos + Move Counter + Parry & Stagger Mechanics</p>
+    
+    <!-- Party Size & Color Palette Switcher -->
+    <div class="palette-switcher">
+      <span style="font-weight: bold; color: var(--accent-gold); margin-right: 0.5rem;">🎮 Testbed Palette:</span>
+      <button class="btn-palette" data-count="3">3 Heroes (3 Colors: 🔴🔵🟢)</button>
+      <button class="btn-palette active" data-count="4">4 Heroes (4 Colors: 🔴🔵🟢🟡)</button>
+      <button class="btn-palette" data-count="5">5 Heroes (5 Colors: 🔴🔵🟢🟡🟣)</button>
+    </div>
   </header>
 
   <div class="game-container">
     <div class="grid-section">
-      <!-- Boss Banner with Stagger & Break Bar -->
+      <!-- Boss Banner -->
       <div class="boss-banner" style="width: 100%;">
         <div class="boss-header">
           <div class="boss-name">
@@ -66,8 +74,8 @@
 
     <div class="panel">
       <div class="panel-title">
-        <span>🛡️ Party Composition (4 Slots)</span>
-        <span style="font-size: 0.75rem; color: var(--text-muted);">5 Equip Slots + Set Bonuses</span>
+        <span>🛡️ Party Composition (<span id="partyCountText">4</span> Heroes)</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Active Candy Colors</span>
       </div>
       <div class="party-list" id="partyList"></div>
     </div>
@@ -89,7 +97,7 @@
         <span>📜 Combat Log</span>
       </div>
       <div class="combat-log" id="combatLog">
-        <div class="log-entry">Engine Ver 3.0 Loaded. Boss Stagger Bar & Break System active!</div>
+        <div class="log-entry">Match-3 Core Testbed Initialized. Select palette size above to test!</div>
       </div>
     </div>
   </div>

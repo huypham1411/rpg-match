@@ -1,5 +1,5 @@
 /**
- * GameCore - Unified Engine Facade with Stagger/Break Bar System, 5-Slot Equipment Sets, & GBF Charge Bar.
+ * GameCore - Unified Engine Facade with Dynamic Party Palette (3 to 5 Colors) & Pure Match-3 Core.
  */
 
 import { EventBus } from './EventBus.js';
@@ -24,6 +24,10 @@ export class GameCore {
     );
   }
 
+  /**
+   * Initialize battle with dynamic party size (3, 4, or 5 heroes)
+   * The grid palette automatically configures to match the active hero element colors!
+   */
   init(partyConfig = null, bossConfig = null) {
     const defaultParty = partyConfig || [
       {
@@ -51,15 +55,14 @@ export class GameCore {
         }
       },
       {
-        id: 'hero_purple',
-        name: 'Valerie the Duelist',
-        classType: HERO_CLASSES.COUNTER_SPECIALIST,
-        elementColor: ELEMENT_COLORS.PURPLE,
-        icon: '🗡️',
-        baseStats: { maxHp: 1300, hp: 1300, atk: 140, def: 60, critRate: 0.20, critDmg: 1.7 },
+        id: 'hero_green',
+        name: 'Sylph the Druid',
+        classType: HERO_CLASSES.SUPPORT,
+        elementColor: ELEMENT_COLORS.GREEN,
+        icon: '🌿',
+        baseStats: { maxHp: 1100, hp: 1100, atk: 130, def: 50, critRate: 0.1, critDmg: 1.5 },
         equipment: {
-          [EQUIP_SLOTS.WEAPON]: { name: 'Duelist Rapier', set: EQUIP_SETS.COUNTER_SET, stats: { atk: 35, critRate: 0.1 } },
-          [EQUIP_SLOTS.ACCESSORY]: { name: 'Counter Ring', set: EQUIP_SETS.COUNTER_SET, stats: { critDmg: 0.15 } }
+          [EQUIP_SLOTS.ACCESSORY]: { name: 'Emerald Pendant', stats: { maxHp: 150, atk: 20 } }
         }
       },
       {
@@ -77,8 +80,33 @@ export class GameCore {
     ];
 
     this.partyEngine.setParty(defaultParty);
-    this.gridEngine.initGrid();
+    
+    // Automatically get active element colors from party composition
+    const activeColors = this.partyEngine.getActiveElementColors();
+    this.gridEngine.initGrid(activeColors);
     this.battleEngine.startBattle(bossConfig);
+
+    return this.getFullState();
+  }
+
+  /**
+   * Helper to set custom 3, 4, or 5 hero party and auto-adjust board colors
+   */
+  setPartyPreset(heroCount = 3) {
+    const allPresets = [
+      { id: 'hero_red', name: 'Ignis (Attacker)', classType: HERO_CLASSES.ATTACKER, elementColor: ELEMENT_COLORS.RED, icon: '⚔️' },
+      { id: 'hero_blue', name: 'Aegis (Guard)', classType: HERO_CLASSES.GUARD, elementColor: ELEMENT_COLORS.BLUE, icon: '🛡️' },
+      { id: 'hero_green', name: 'Sylph (Support)', classType: HERO_CLASSES.SUPPORT, elementColor: ELEMENT_COLORS.GREEN, icon: '🌿' },
+      { id: 'hero_yellow', name: 'Lux (Archmage)', classType: HERO_CLASSES.MAGE, elementColor: ELEMENT_COLORS.YELLOW, icon: '⚡' },
+      { id: 'hero_purple', name: 'Valerie (Counter)', classType: HERO_CLASSES.COUNTER_SPECIALIST, elementColor: ELEMENT_COLORS.PURPLE, icon: '🗡️' }
+    ];
+
+    const selectedParty = allPresets.slice(0, Math.max(3, Math.min(5, heroCount)));
+    this.partyEngine.setParty(selectedParty);
+
+    const activeColors = this.partyEngine.getActiveElementColors();
+    this.gridEngine.initGrid(activeColors);
+    this.battleEngine.startBattle();
 
     return this.getFullState();
   }
@@ -156,7 +184,6 @@ export class GameCore {
     const isCrit = Math.random() < stats.critRate;
     if (isCrit) rawDamage *= stats.critDmg;
 
-    // Ultimate depletes 20 Stagger points
     this.battleEngine.depleteBossStagger(20, 'GBF Burst Ultimate');
 
     const damageAfterDef = Math.max(1, Math.round(rawDamage * (100 / (100 + this.battleEngine.boss.def))));
@@ -184,6 +211,7 @@ export class GameCore {
     return {
       battle: this.battleEngine.getBattleState(),
       grid: this.gridEngine.getGridState(),
+      activeColors: this.gridEngine.availableColors,
       party: this.partyEngine.getPartyState(),
       bossDebuffs: [...this.skillBuffEngine.bossBuffs],
       autoParryStance: this.parryBlockEngine.hasAutoParryStance

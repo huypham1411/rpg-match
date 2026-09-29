@@ -1,13 +1,13 @@
 /**
- * PartyEngine - Manages Heroes, 5-Slot Equipment Sets, GBF Charge Gauge, and Stats Pipeline.
+ * PartyEngine - Manages Heroes (3 to 5 Max), 5-Slot Equipment Sets, GBF Charge Gauge, & Color Mapping.
  */
 
 export const HERO_CLASSES = {
-  GUARD: 'Guard',                   // High DEF, enables team Block mode
-  ATTACKER: 'Attacker',             // High ATK, direct physical damage
-  MAGE: 'Mage',                     // High AOE magic damage & elemental debuffs
-  SUPPORT: 'Support',                // Healer & team buff provider
-  COUNTER_SPECIALIST: 'Counter'     // Auto-parry, team counter buffs, utility debuffer
+  GUARD: 'Guard',
+  ATTACKER: 'Attacker',
+  MAGE: 'Mage',
+  SUPPORT: 'Support',
+  COUNTER_SPECIALIST: 'Counter'
 };
 
 export const ELEMENT_COLORS = {
@@ -23,14 +23,14 @@ export const EQUIP_SLOTS = {
   ARMOR: 'armor',
   ACCESSORY: 'accessory',
   ARTIFACT: 'artifact',
-  RUNE: 'rune'       // 5th Equipment Slot!
+  RUNE: 'rune'
 };
 
 export const EQUIP_SETS = {
-  COUNTER_SET: 'COUNTER_SET',        // 2-pc: +20% Counter Dmg, 4-pc: Auto-parry grants team ATK +25%
-  MATCH_UP_SET: 'MATCH_UP_SET',      // 2-pc: +20% Energy Charge Speed, 4-pc: Match 4+ has 30% chance for +1 Move
-  DEBUFF_AMP_SET: 'DEBUFF_AMP_SET',  // 2-pc: +25% Debuff Duration, 4-pc: Debuffs reduce Boss ATK by 20%
-  GUARDIAN_SET: 'GUARDIAN_SET'       // 2-pc: +25% DEF, 4-pc: Blocking reflects 30% damage
+  COUNTER_SET: 'COUNTER_SET',
+  MATCH_UP_SET: 'MATCH_UP_SET',
+  DEBUFF_AMP_SET: 'DEBUFF_AMP_SET',
+  GUARDIAN_SET: 'GUARDIAN_SET'
 };
 
 export class PartyEngine {
@@ -39,16 +39,22 @@ export class PartyEngine {
     this.heroes = [];
   }
 
+  /**
+   * Set party members (3 to 5 heroes)
+   */
   setParty(heroConfigs) {
-    if (heroConfigs.length > 4) {
-      throw new Error('Party cannot exceed 4 heroes.');
+    if (heroConfigs.length < 3) {
+      throw new Error('Party must contain at least 3 heroes.');
+    }
+    if (heroConfigs.length > 5) {
+      throw new Error('Party cannot exceed 5 heroes.');
     }
 
     this.heroes = heroConfigs.map((config, index) => ({
       id: config.id || `hero_${index + 1}`,
       name: config.name,
       classType: config.classType || HERO_CLASSES.ATTACKER,
-      elementColor: config.elementColor || ELEMENT_COLORS.RED,
+      elementColor: config.elementColor || Object.values(ELEMENT_COLORS)[index % 5],
       icon: config.icon || '⚔️',
       baseStats: {
         maxHp: config.baseStats?.maxHp || 1000,
@@ -58,7 +64,7 @@ export class PartyEngine {
         critRate: config.baseStats?.critRate || 0.1,
         critDmg: config.baseStats?.critDmg || 1.5,
       },
-      energy: 0, // GBF Charge Bar (0 -> 100)
+      energy: 0,
       maxEnergy: 100,
       skills: {
         basicSkill: config.skills?.basicSkill || { name: 'Basic Strike', multiplier: 1.0, type: 'DMG' },
@@ -82,8 +88,13 @@ export class PartyEngine {
   }
 
   /**
-   * Evaluate Active Set Bonuses for a Hero (2-piece and 4-piece bonuses)
+   * Get active candy color palette from party members
    */
+  getActiveElementColors() {
+    const colors = this.heroes.map(h => h.elementColor);
+    return [...new Set(colors)]; // Return unique element colors
+  }
+
   getActiveSetBonuses(heroId) {
     const hero = this.getHero(heroId);
     if (!hero) return [];
@@ -104,16 +115,12 @@ export class PartyEngine {
     return activeBonuses;
   }
 
-  /**
-   * Calculate effective stats considering equipment, 5-slots, set bonuses & buffs
-   */
   getHeroEffectiveStats(heroId) {
     const hero = this.getHero(heroId);
     if (!hero) return null;
 
     let stats = { ...hero.baseStats };
 
-    // Equipment Flat & Percentage Bonuses
     Object.values(hero.equipment).forEach(item => {
       if (!item || !item.stats) return;
       if (item.stats.maxHp) stats.maxHp += item.stats.maxHp;
@@ -123,7 +130,6 @@ export class PartyEngine {
       if (item.stats.critDmg) stats.critDmg += item.stats.critDmg;
     });
 
-    // Set Bonuses Stat Modifiers
     const setBonuses = this.getActiveSetBonuses(heroId);
     let setAtkMult = 1.0;
     let setDefMult = 1.0;
@@ -133,7 +139,6 @@ export class PartyEngine {
       if (b.set === EQUIP_SETS.COUNTER_SET && b.pieces === 2) stats.critRate += 0.10;
     });
 
-    // Active Buffs
     let buffAtkMult = 1.0;
     let buffDefMult = 1.0;
     hero.buffs.forEach(buff => {
@@ -172,9 +177,6 @@ export class PartyEngine {
     return removed;
   }
 
-  /**
-   * Charge GBF-Style Charge Gauge (0 to 100)
-   */
   chargeEnergyByColor(color, matchCount) {
     const chargedHeroes = [];
     const baseEnergyPerTile = 10;
@@ -212,7 +214,7 @@ export class PartyEngine {
       return { success: false, reason: `GBF Charge Bar not full (${hero.energy}/100)` };
     }
 
-    hero.energy = 0; // Reset GBF Charge Bar
+    hero.energy = 0;
     const stats = this.getHeroEffectiveStats(heroId);
     const ultimateInfo = hero.skills.ultimateSkill;
 
@@ -267,7 +269,6 @@ export class PartyEngine {
       hero.baseStats.hp = Math.max(0, hero.baseStats.hp - damageAfterDef);
       totalTaken += damageAfterDef;
 
-      // Taking damage grants GBF Charge Energy (+10%)
       hero.energy = Math.min(hero.maxEnergy, hero.energy + 10);
     });
 

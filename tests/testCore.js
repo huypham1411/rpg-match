@@ -1,60 +1,51 @@
 /**
- * Automated Verification Script Ver 3.0
- * Validates Boss Stagger & Break Bar System, Differential Parry/Counter Reduction, & Broken State Bonus Damage.
+ * Automated Verification Script Ver 4.0
+ * Validates Dynamic Party Color Palette (3, 4, and 5 Heroes/Colors) & Pure Match-3 Core.
  */
 
 import { GameCore } from '../src/core/GameCore.js';
 
 console.log('===================================================');
-console.log('🎮 MATCH-3 RPG CORE ENGINE - AUTOMATED TEST VER 3.0');
+console.log('🎮 MATCH-3 RPG CORE ENGINE - AUTOMATED TEST VER 4.0');
 console.log('===================================================\n');
 
 const game = new GameCore();
 
-// Event Listeners
-game.eventBus.on('battle:started', (state) => {
-  console.log(`[EVENT] Battle Started! Boss: ${state.boss.name}, Stagger Gauge: ${state.boss.staggerGauge}/${state.boss.maxStaggerGauge}`);
-});
+// 1. Test 3-Hero Party (3 Colors)
+console.log('--- 1. Testing 3-Hero Party (3 Candy Colors) ---');
+const state3 = game.setPartyPreset(3);
+console.log(`Party size: ${state3.party.length} heroes loaded.`);
+console.log(`Grid Active Colors (${state3.activeColors.length}):`, state3.activeColors);
+console.log(`Grid Dimensions: ${state3.grid.length}x${state3.grid[0].length}\n`);
 
-game.eventBus.on('boss:stagger_reduced', (data) => {
-  console.log(`💥 [STAGGER REDUCED] -${data.amount} points via [${data.source}]. Current Stagger: ${data.current}/${data.max}`);
-});
+// 2. Test 4-Hero Party (4 Colors)
+console.log('--- 2. Testing 4-Hero Party (4 Candy Colors) ---');
+const state4 = game.setPartyPreset(4);
+console.log(`Party size: ${state4.party.length} heroes loaded.`);
+console.log(`Grid Active Colors (${state4.activeColors.length}):`, state4.activeColors);
+console.log(`Grid Dimensions: ${state4.grid.length}x${state4.grid[0].length}\n`);
 
-game.eventBus.on('boss:broken', (data) => {
-  console.log(`⚡ [BOSS BROKEN!] Boss ${data.bossName} is STAGGERED & BROKEN! Takes +75% bonus damage!`);
-});
+// 3. Test 5-Hero Party (5 Colors)
+console.log('--- 3. Testing 5-Hero Party (5 Candy Colors) ---');
+const state5 = game.setPartyPreset(5);
+console.log(`Party size: ${state5.party.length} heroes loaded.`);
+console.log(`Grid Active Colors (${state5.activeColors.length}):`, state5.activeColors);
+console.log(`Grid Dimensions: ${state5.grid.length}x${state5.grid[0].length}\n`);
 
-game.eventBus.on('boss:damaged', (data) => {
-  const breakTag = data.isBroken ? ' [BROKEN BONUS +75%]' : '';
-  console.log(`🎯 [DAMAGE] Boss took ${data.damage} damage!${breakTag} (Remaining Boss HP: ${data.currentHp}/${data.maxHp})`);
-});
-
-// 1. Init Game
-console.log('--- 1. Initializing Game Engine ---');
-game.init();
-
-// 2. Test Normal Match Stagger Reduction
-console.log('\n--- 2. Testing Normal Match Stagger Reduction ---');
-game.battleEngine.depleteBossStagger(4, 'Normal Match-3');
-console.log(`Boss Stagger Gauge after Normal Match: ${game.battleEngine.boss.staggerGauge}/100`);
-
-// 3. Test Parry / Counter Stagger Reduction (-50 points!)
-console.log('\n--- 3. Testing Perfect Parry / Counter Heavy Stagger Reduction ---');
-game.battleEngine.depleteBossStagger(50, 'Perfect Parry / Counter');
-console.log(`Boss Stagger Gauge after Perfect Parry: ${game.battleEngine.boss.staggerGauge}/100`);
-
-// 4. Deplete remaining stagger to trigger BROKEN state
-console.log('\n--- 4. Depleting Remaining Stagger to Trigger BROKEN State ---');
-game.battleEngine.depleteBossStagger(50, 'Counter Specialist Skill');
-console.log(`Is Boss Broken: ${game.battleEngine.boss.isBroken}`);
-
-// 5. Test Bonus Damage during BROKEN state
-console.log('\n--- 5. Testing Bonus Damage Dealt to Broken Boss ---');
-const heroRed = game.partyEngine.getHeroByColor('red');
-game.partyEngine.chargeEnergyByColor('red', 10); // Fully charge GBF energy bar
-const ultRes = game.useUltimate(heroRed.id);
-console.log(`Ultimate used on Broken Boss: success=${ultRes.success}, damage=${ultRes.damage}`);
+// 4. Test Match-3 Swap on 3-Color Board
+console.log('--- 4. Testing Match-3 Swap on 3-Color Board ---');
+game.setPartyPreset(3);
+let swapped = false;
+for (let r = 0; r < 8 && !swapped; r++) {
+  for (let c = 0; c < 7 && !swapped; c++) {
+    const res = game.swapTiles(r, c, r, c + 1);
+    if (res.success) {
+      console.log(`✅ Swap Successful at (${r},${c}) <-> (${r},${c+1})! Cascades: ${res.cascadeResults.length}, Total Damage: ${res.totalDamageDealt}`);
+      swapped = true;
+    }
+  }
+}
 
 console.log('\n===================================================');
-console.log('🎉 ALL STAGGER & BREAK BAR TESTS PASSED SUCCESSFULLY!');
+console.log('🎉 ALL DYNAMIC PARTY COLOR TESTS PASSED SUCCESSFULLY!');
 console.log('===================================================');

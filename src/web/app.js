@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const movesText = document.getElementById('movesText');
   const turnText = document.getElementById('turnText');
   const partyList = document.getElementById('partyList');
+  const partyCountText = document.getElementById('partyCountText');
   const combatLog = document.getElementById('combatLog');
   const btnBlock = document.getElementById('btnBlock');
   const btnExport = document.getElementById('btnExport');
@@ -216,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderParty() {
     partyList.innerHTML = '';
     const party = game.partyEngine.getPartyState();
+    if (partyCountText) partyCountText.textContent = party.length;
 
     party.forEach(hero => {
       const card = document.createElement('div');
@@ -311,6 +313,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (parryAnimationId) cancelAnimationFrame(parryAnimationId);
     parryPointer.style.left = '0%';
   }
+
+  // Palette Switcher Event Listeners (3, 4, 5 Heroes/Colors)
+  document.querySelectorAll('.btn-palette').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.btn-palette').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      const count = parseInt(e.target.dataset.count, 10);
+      game.setPartyPreset(count);
+      addLog(`🎮 Testbed switched to ${count} Heroes (${count} Candy Colors Palette)!`, 'log-parry');
+      renderAll();
+    });
+  });
 
   btnBlock.addEventListener('click', () => {
     const res = game.toggleBlock();

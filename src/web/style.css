@@ -43,6 +43,37 @@ header p {
   font-size: 0.9rem;
 }
 
+.palette-switcher {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.btn-palette {
+  background: #334155;
+  color: var(--text-main);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-palette:hover {
+  background: #475569;
+}
+
+.btn-palette.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
 .game-container {
   display: grid;
   grid-template-columns: 1fr 350px 320px;

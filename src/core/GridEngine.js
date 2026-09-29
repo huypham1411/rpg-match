@@ -1,5 +1,5 @@
 /**
- * GridEngine - Match-3 Board, 2x2 Square Detection, Match 3/4/5 Algorithm & Cascade Engine.
+ * GridEngine - Match-3 Board Engine with Dynamic Color Palette (3 to 5 Colors).
  */
 
 import { ELEMENT_COLORS } from './PartyEngine.js';
@@ -25,17 +25,27 @@ export class GridEngine {
     this.availableColors = [
       ELEMENT_COLORS.RED,
       ELEMENT_COLORS.BLUE,
-      ELEMENT_COLORS.GREEN,
-      ELEMENT_COLORS.YELLOW,
-      ELEMENT_COLORS.PURPLE
+      ELEMENT_COLORS.GREEN
     ];
     this.grid = [];
   }
 
   /**
-   * Initialize grid without initial matches
+   * Initialize grid with dynamic color palette (3 to 5 colors)
    */
-  initGrid() {
+  initGrid(customColors = null) {
+    if (customColors && Array.isArray(customColors) && customColors.length >= 3) {
+      this.availableColors = [...customColors];
+    } else if (!customColors) {
+      this.availableColors = [
+        ELEMENT_COLORS.RED,
+        ELEMENT_COLORS.BLUE,
+        ELEMENT_COLORS.GREEN,
+        ELEMENT_COLORS.YELLOW,
+        ELEMENT_COLORS.PURPLE
+      ];
+    }
+
     this.grid = Array(this.rows).fill(null).map(() => Array(this.cols).fill(null));
 
     for (let r = 0; r < this.rows; r++) {
@@ -75,15 +85,15 @@ export class GridEngine {
     }
 
     if (this.eventBus) {
-      this.eventBus.emit('grid:initialized', this.getGridState());
+      this.eventBus.emit('grid:initialized', {
+        grid: this.getGridState(),
+        activeColors: [...this.availableColors]
+      });
     }
 
     return this.getGridState();
   }
 
-  /**
-   * Attempt tile swap between adjacent cells
-   */
   swapTiles(r1, c1, r2, c2) {
     if (!this.isAdjacent(r1, c1, r2, c2)) {
       return { success: false, reason: 'Tiles are not adjacent' };
@@ -113,9 +123,6 @@ export class GridEngine {
     };
   }
 
-  /**
-   * Process cascades loop
-   */
   processCascades() {
     const cascadeSequence = [];
     let comboMultiplier = 1.0;
@@ -174,9 +181,6 @@ export class GridEngine {
     return cascadeSequence;
   }
 
-  /**
-   * Find all matches: Horizontal, Vertical, 2x2 Square, Match 5
-   */
   findAllMatches() {
     const matchedGroups = [];
     const matchedCoordsSet = new Set();
