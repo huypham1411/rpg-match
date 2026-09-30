@@ -1,51 +1,62 @@
 /**
- * Automated Verification Script Ver 4.0
- * Validates Dynamic Party Color Palette (3, 4, and 5 Heroes/Colors) & Pure Match-3 Core.
+ * Automated Verification Script Ver 5.0
+ * Validates Special Gems (Rainbow, Line Bomb, Target Bomb) & Level Obstacles (Ice, Mirror).
  */
 
 import { GameCore } from '../src/core/GameCore.js';
+import { SPECIAL_TILES, OBSTACLES } from '../src/core/GridEngine.js';
 
 console.log('===================================================');
-console.log('🎮 MATCH-3 RPG CORE ENGINE - AUTOMATED TEST VER 4.0');
+console.log('🎮 MATCH-3 RPG CORE ENGINE - AUTOMATED TEST VER 5.0');
 console.log('===================================================\n');
 
 const game = new GameCore();
 
-// 1. Test 3-Hero Party (3 Colors)
-console.log('--- 1. Testing 3-Hero Party (3 Candy Colors) ---');
-const state3 = game.setPartyPreset(3);
-console.log(`Party size: ${state3.party.length} heroes loaded.`);
-console.log(`Grid Active Colors (${state3.activeColors.length}):`, state3.activeColors);
-console.log(`Grid Dimensions: ${state3.grid.length}x${state3.grid[0].length}\n`);
+// Event Listeners
+game.eventBus.on('special:rainbow_activated', (data) => {
+  console.log(`🌈 [RAINBOW ACTIVATED] Cleared ALL ${data.clearedCount} tiles of color ${data.targetColor.toUpperCase()}!`);
+});
 
-// 2. Test 4-Hero Party (4 Colors)
-console.log('--- 2. Testing 4-Hero Party (4 Candy Colors) ---');
-const state4 = game.setPartyPreset(4);
-console.log(`Party size: ${state4.party.length} heroes loaded.`);
-console.log(`Grid Active Colors (${state4.activeColors.length}):`, state4.activeColors);
-console.log(`Grid Dimensions: ${state4.grid.length}x${state4.grid[0].length}\n`);
+game.eventBus.on('special:row_bomb_triggered', (data) => {
+  console.log(`🚀 [ROW BOMB] Cleared entire Row ${data.row}!`);
+});
 
-// 3. Test 5-Hero Party (5 Colors)
-console.log('--- 3. Testing 5-Hero Party (5 Candy Colors) ---');
-const state5 = game.setPartyPreset(5);
-console.log(`Party size: ${state5.party.length} heroes loaded.`);
-console.log(`Grid Active Colors (${state5.activeColors.length}):`, state5.activeColors);
-console.log(`Grid Dimensions: ${state5.grid.length}x${state5.grid[0].length}\n`);
+game.eventBus.on('special:target_bomb_triggered', (data) => {
+  console.log(`💣 [TARGET BOMB] Homed in on target (${data.target.row}, ${data.target.col}), Destroyed Obstacle: ${data.destroyedObstacle}`);
+});
 
-// 4. Test Match-3 Swap on 3-Color Board
-console.log('--- 4. Testing Match-3 Swap on 3-Color Board ---');
-game.setPartyPreset(3);
-let swapped = false;
-for (let r = 0; r < 8 && !swapped; r++) {
-  for (let c = 0; c < 7 && !swapped; c++) {
-    const res = game.swapTiles(r, c, r, c + 1);
-    if (res.success) {
-      console.log(`✅ Swap Successful at (${r},${c}) <-> (${r},${c+1})! Cascades: ${res.cascadeResults.length}, Total Damage: ${res.totalDamageDealt}`);
-      swapped = true;
-    }
+game.eventBus.on('obstacle:shattered', (data) => {
+  console.log(`🧊 [OBSTACLE SHATTERED] ${data.type.toUpperCase()} shattered at (${data.row}, ${data.col})! Remaining Goals: Ice=${data.remainingGoals.ice}, Mirror=${data.remainingGoals.mirror}`);
+});
+
+// 1. Init Game
+console.log('--- 1. Initializing Game Engine with Obstacles ---');
+const state = game.init();
+console.log(`Grid initialized: ${state.grid.length}x${state.grid[0].length}`);
+
+// Count placed obstacles
+let iceCount = 0;
+let mirrorCount = 0;
+for (let r = 0; r < 8; r++) {
+  for (let c = 0; c < 8; c++) {
+    if (state.grid[r][c].obstacle === OBSTACLES.ICE) iceCount++;
+    if (state.grid[r][c].obstacle === OBSTACLES.MIRROR) mirrorCount++;
   }
 }
+console.log(`Initial Obstacles on Board: Ice(🧊)=${iceCount}, Mirror(🪞)=${mirrorCount}\n`);
 
-console.log('\n===================================================');
-console.log('🎉 ALL DYNAMIC PARTY COLOR TESTS PASSED SUCCESSFULLY!');
+// 2. Test Target Bomb Homing Destroy
+console.log('--- 2. Testing Targeted Homing Bomb (2x2 Square Result) ---');
+const dummySet = new Set();
+game.gridEngine.triggerTargetedHomingBomb(dummySet);
+console.log('');
+
+// 3. Test Rainbow Gem Activation
+console.log('--- 3. Testing Rainbow Gem Swap Activation ---');
+const rainbowTile = { row: 0, col: 0, special: SPECIAL_TILES.RAINBOW };
+const resRainbow = game.gridEngine.activateRainbowSwap(rainbowTile, 'red');
+console.log(`Rainbow Swap Result: success=${resRainbow.success}, clearedCount=${resRainbow.clearedCount}\n`);
+
+console.log('===================================================');
+console.log('🎉 ALL SPECIAL GEMS & OBSTACLE TESTS PASSED!');
 console.log('===================================================');

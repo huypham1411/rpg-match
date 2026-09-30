@@ -1,5 +1,6 @@
 import { GameCore } from '../core/GameCore.js';
 import { EQUIP_SLOTS } from '../core/PartyEngine.js';
+import { SPECIAL_TILES, OBSTACLES } from '../core/GridEngine.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const game = new GameCore();
@@ -17,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const bossChargeFill = document.getElementById('bossChargeFill');
   const bossChargeText = document.getElementById('bossChargeText');
   const bossBrokenBadge = document.getElementById('bossBrokenBadge');
+  const goalIceText = document.getElementById('goalIceText');
+  const goalMirrorText = document.getElementById('goalMirrorText');
   const movesText = document.getElementById('movesText');
   const turnText = document.getElementById('turnText');
   const partyList = document.getElementById('partyList');
@@ -51,7 +54,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   game.eventBus.on('grid:swapped', () => renderGrid());
-  game.eventBus.on('grid:cascaded', () => renderGrid());
+  game.eventBus.on('grid:cascaded', (data) => {
+    renderGrid();
+    if (data.goals) renderGoals(data.goals);
+  });
+
+  game.eventBus.on('special:rainbow_activated', (data) => {
+    addLog(`🌈 RAINBOW GEM ACTIVATED! Destroyed all ${data.clearedCount} tiles of color ${data.targetColor.toUpperCase()}!`, 'log-crit');
+  });
+
+  game.eventBus.on('special:row_bomb_triggered', (data) => {
+    addLog(`🚀 ROW BOMB TRIGGERED! Cleared entire Row ${data.row}!`, 'log-parry');
+  });
+
+  game.eventBus.on('special:col_bomb_triggered', (data) => {
+    addLog(`⚡ COLUMN BOMB TRIGGERED! Cleared entire Column ${data.col}!`, 'log-parry');
+  });
+
+  game.eventBus.on('special:target_bomb_triggered', (data) => {
+    addLog(`💣 TARGET BOMB HOMED IN! Shattered Obstacle at (${data.target.row}, ${data.target.col})!`, 'log-parry');
+  });
+
+  game.eventBus.on('obstacle:shattered', (data) => {
+    addLog(`🧊 OBSTACLE SHATTERED: ${data.type.toUpperCase()} broken at (${data.row}, ${data.col})!`, 'log-heal');
+    renderGoals(data.remainingGoals);
+  });
 
   game.eventBus.on('boss:damaged', (data) => {
     const critText = data.isCrit ? '🔥 CRITICAL HIT! ' : '';
@@ -68,15 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
   game.eventBus.on('boss:broken', (data) => {
     addLog(`⚡ BOSS BROKEN! Boss is STAGGERED and takes +75% BONUS DAMAGE for 1 turn!`, 'log-crit');
     renderBossInfo();
-  });
-
-  game.eventBus.on('boss:break_recovered', () => {
-    addLog(`🛡️ Boss recovered from BROKEN state! Stagger Bar reset.`, '');
-    renderBossInfo();
-  });
-
-  game.eventBus.on('boss:break_skipped', () => {
-    addLog(`⚡ Boss is BROKEN and cannot attack this turn!`, 'log-parry');
   });
 
   game.eventBus.on('party:energy_charged', () => renderParty());
@@ -126,16 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
   });
 
-  game.eventBus.on('battle:victory', () => {
-    addLog(`🎉 VICTORY! Boss defeated!`, 'log-parry');
-    alert('🎉 VICTORY! Boss defeated!');
-  });
-
-  game.eventBus.on('battle:defeat', () => {
-    addLog(`☠️ DEFEAT! All party members have fallen.`, 'log-crit');
-    alert('☠️ DEFEAT! All party members have fallen.');
-  });
-
   function renderAll() {
     renderBossInfo();
     renderBoardHeader();
@@ -143,6 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderParty();
     renderControls();
     renderAutoParryBadge();
+    renderGoals(game.gridEngine.goals);
+  }
+
+  function renderGoals(goals) {
+    if (!goals) return;
+    if (goalIceText) goalIceText.textContent = goals.ice;
+    if (goalMirrorText) goalMirrorText.textContent = goals.mirror;
   }
 
   function renderBossInfo() {
@@ -175,13 +190,29 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let c = 0; c < 8; c++) {
         const tile = grid[r][c];
         const div = document.createElement('div');
-        div.className = `tile tile-${tile.color}`;
-        div.dataset.row = r;
-        div.dataset.col = c;
-        div.textContent = ELEMENT_ICONS[tile.color] || '💎';
 
-        if (selectedTile && selectedTile.row === r && selectedTile.col === c) {
-          div.classList.add('selected');
+        if (tile) {
+          if (tile.special === SPECIAL_TILES.RAINBOW) {
+            div.className = 'tile special-rainbow';
+            div.textContent = '🌈';
+          } else {
+            div.className = `tile tile-${tile.color}`;
+            let icon = ELEMENT_ICONS[tile.color] || '💎';
+            if (tile.special === SPECIAL_TILES.ROW_BOMB) icon = '🚀';
+            else if (tile.special === SPECIAL_TILES.COL_BOMB) icon = '⚡';
+            else if (tile.special === SPECIAL_TILES.TARGET_BOMB) icon = '💣';
+            div.textContent = icon;
+          }
+
+          if (tile.obstacle === OBSTACLES.ICE) {
+            div.innerHTML += `<span class="obstacle-badge" title="Ice 🧊">🧊</span>`;
+          } else if (tile.obstacle === OBSTACLES.MIRROR) {
+            div.innerHTML += `<span class="obstacle-badge" title="Mirror 🪞 (${tile.obstacleHp}HP)">🪞${tile.obstacleHp}</span>`;
+          }
+
+          if (selectedTile && selectedTile.row === r && selectedTile.col === c) {
+            div.classList.add('selected');
+          }
         }
 
         div.addEventListener('click', () => handleTileClick(r, c));
@@ -314,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
     parryPointer.style.left = '0%';
   }
 
-  // Palette Switcher Event Listeners (3, 4, 5 Heroes/Colors)
   document.querySelectorAll('.btn-palette').forEach(btn => {
     btn.addEventListener('click', (e) => {
       document.querySelectorAll('.btn-palette').forEach(b => b.classList.remove('active'));
@@ -322,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const count = parseInt(e.target.dataset.count, 10);
       game.setPartyPreset(count);
-      addLog(`🎮 Testbed switched to ${count} Heroes (${count} Candy Colors Palette)!`, 'log-parry');
+      addLog(`🎮 Switched to ${count} Heroes (${count} Candy Colors Palette)!`, 'log-parry');
       renderAll();
     });
   });

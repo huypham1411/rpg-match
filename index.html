@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pure Match-3 Core Engine Playground</title>
+  <title>Pure Match-3 Core Engine Playground Ver 5.0</title>
   <link rel="stylesheet" href="src/web/style.css">
 </head>
 <body>
   <header>
-    <h1>🎮 Pure Match-3 Core Engine Testbed</h1>
-    <p>Dynamic Candy Palette (3 to 5 Colors) + Cascades + Combos + Move Counter + Parry & Stagger Mechanics</p>
+    <h1>🎮 Match-3 RPG Engine Core (Ver 5.0 Special Gems & Level Goals)</h1>
+    <p>Special Gems (Rainbow 🌈, Row/Col Bombs 🚀⚡, Target Bombs 💣) + Obstacles (Ice 🧊, Mirror 🪞)</p>
     
-    <!-- Party Size & Color Palette Switcher -->
     <div class="palette-switcher">
       <span style="font-weight: bold; color: var(--accent-gold); margin-right: 0.5rem;">🎮 Testbed Palette:</span>
       <button class="btn-palette" data-count="3">3 Heroes (3 Colors: 🔴🔵🟢)</button>
@@ -47,6 +46,13 @@
           <div class="bar-fill charge-fill" id="bossChargeFill" style="width: 0%;"></div>
           <div class="bar-text" id="bossChargeText" style="font-size: 0.65rem;">Attack Charge: 0%</div>
         </div>
+      </div>
+
+      <!-- Level Goals Bar -->
+      <div class="goals-bar" style="width: 100%; display: flex; justify-content: space-around; background: #090d16; border: 1px solid var(--accent-gold); border-radius: 10px; padding: 6px 12px; margin-bottom: 0.75rem; font-weight: bold; font-size: 0.85rem;">
+        <span>🎯 Stage Objectives:</span>
+        <div>🧊 Ice Blocks: <span id="goalIceText" style="color: #38bdf8;">5</span></div>
+        <div>🪞 Mirror Blocks: <span id="goalMirrorText" style="color: #c084fc;">5</span></div>
       </div>
 
       <div class="board-header">
@@ -97,7 +103,7 @@
         <span>📜 Combat Log</span>
       </div>
       <div class="combat-log" id="combatLog">
-        <div class="log-entry">Match-3 Core Testbed Initialized. Select palette size above to test!</div>
+        <div class="log-entry">Ver 5.0 Engine Ready. Match 4/5 or 2x2 Square to spawn Special Gems!</div>
       </div>
     </div>
   </div>
